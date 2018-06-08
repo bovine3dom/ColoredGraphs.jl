@@ -25,6 +25,8 @@ module ColoredGraphs
             5 => "green",
             6 => "orange",
         )
+
+    NB: This does nothing to the colours of nodes which are not specified in the coldict.
     """
 	function setcolors!(g, dict::Dict{Int,String})
 		for (vertex, color) in dict
