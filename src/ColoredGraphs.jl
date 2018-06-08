@@ -75,16 +75,14 @@ module ColoredGraphs
     end
 
     function plotnauty(nautyrtn)
-        okcol = cl.distinguishable_colors(length(split(join(string.(nautyrtn.partition)),"1",keep=true)))
+        okcol = cl.distinguishable_colors(length(find(x->x==0,nautyrtn.partition)))
 
-        colind = 0
+        colind = 1
         colarr = []
         for i in nautyrtn.partition
+            push!(colarr,okcol[colind])
             colind = i == 0 ? colind + 1 : colind
-                push!(colarr,okcol[colind])
-            end
-        colarr
-        #colarr2 = [x[2] for x in sort(collect(enumerate(colarr)),by=x->blah.labels[x[1]])]
+        end
         gp.gplot(lg.Graph(Nauty.label_to_adj(nautyrtn.canong)),nodefillc=colarr)
     end
 
