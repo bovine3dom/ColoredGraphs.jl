@@ -59,13 +59,11 @@ module ColoredGraphs
         a.digraph = 1
         a.defaultptn = 0
         labels, partition = nautylabelspartition(g)
-        nautyrtn = Nauty.label_to_adj(
-            Nauty.densenauty(
+        nautyrtn = Nauty.densenauty(
                 Nauty.lg_to_nauty(g.graph),
                 Nauty.optionblk(a),
                 labels,
                 partition
-            ).canong
         )
 
         return nautyrtn
