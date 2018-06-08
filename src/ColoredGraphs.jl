@@ -11,11 +11,8 @@ module ColoredGraphs
     import GraphPlot
     const gp = GraphPlot
     import Nauty
-
-	# colors:
-	# give labelling which is node labels .- 1 sorted in terms of color
-	# partition which is array of 1s until color changes in label, where it is 0.
-
+    import Colors
+    const cl = Colors
 
     """
     Example colour dict:
@@ -35,38 +32,61 @@ module ColoredGraphs
 		end
 	end
 
-	#= setcolors!(g,coldict) =#
-	#= colors = get.(collect(Set(mg.props.(g,1:lg.nv(g)))), :color,"") # get all colors =#
+    function colors(g)
+        get.(collect(Set(mg.props.(g,1:lg.nv(g)))), :color,"")
+    end
 
+    function nautylabelspartition(g)
+        # Get an array of arrays of nodes which are all the same colour
+        colorsarray = [collect(mg.filter_vertices(g,(graph, vertex) -> begin
+                                get(mg.props(graph, vertex), :color, "") == c
+                            end
+                       )) for c in colors(g)]
 
-    #= # Get an array of arrays of nodes which are all the same color =#
-	#= colorsarray = [collect(mg.filter_vertices(g,(graph, vertex) -> begin =#
-	#= 						get(mg.props(graph, vertex), :color, "") == c =#
-	#= 					end =#
-	#= 				)) for c in colors] =#
+        # Nauty numbers its nodes from 0
+        labels = Cint.(vcat(colorsarray.-1...))
 
-    #= # Nauty numbers its nodes from 0 =#
-	#= labelling = Cint.(vcat(colorsarray.-1...)) =#
+        # Give the last node of each colour a "label" of 0, otherwise 1, as Nauty requires
+        partition = vcat([begin z[end]=0; z end for z in ones.(Cint,size.(colorsarray))]...)
+        return (labels,partition)
+    end
 
-    #= # Give the last node of each color a "label" of 0, otherwise 1, as Nauty requires =#
-    #= partition = vcat([begin z[end]=0; z end for z in ones.(Cint,size.(colorsarray))]...) =#
+    function nauty(g)
+        a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH)
+        a.getcanon = 1
+        a.digraph = 1
+        a.defaultptn = 0
+        labels, partition = nautylabelspartition(g)
+        nautyrtn = Nauty.label_to_adj(
+            Nauty.densenauty(
+                Nauty.lg_to_nauty(g.graph),
+                Nauty.optionblk(a),
+                labels,
+                partition
+            ).canong
+        )
 
-	#= a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH) =#
-	#= a.getcanon = 1 =#
-	#= a.digraph = 1 =#
-	#= a.defaultptn = 0 =#
-	#= blah = Nauty.label_to_adj( =#
-	#= 	Nauty.densenauty( =#
-	#= 		Nauty.lg_to_nauty(g.graph), =#
-	#= 		Nauty.optionblk(a), =#
-	#= 		labelling, =#
-	#= 		partition =#
-	#= 	).canong =#
-	#= ) =#
+        return nautyrtn
+    end
 
     function plot(g)
         nodefillc = [get(mg.props(g,v),:color,"black") for v in 1:lg.nv(g)]
         gp.gplot(g.graph,nodefillc=nodefillc)
     end
+
+    function plotnauty(nautyrtn)
+        okcol = cl.distinguishable_colors(length(split(join(string.(nautyrtn.partition)),"1",keep=true)))
+
+        colind = 0
+        colarr = []
+        for i in nautyrtn.partition
+            colind = i == 0 ? colind + 1 : colind
+                push!(colarr,okcol[colind])
+            end
+        colarr
+        #colarr2 = [x[2] for x in sort(collect(enumerate(colarr)),by=x->blah.labels[x[1]])]
+        gp.gplot(lg.Graph(Nauty.label_to_adj(nautyrtn.canong)),nodefillc=colarr)
+    end
+
 
 end
