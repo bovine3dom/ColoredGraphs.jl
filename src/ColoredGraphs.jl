@@ -40,31 +40,32 @@ module ColoredGraphs
 
     function nautylabelspartition(g)
         # Get an array of arrays of nodes which are all the same colour
-        colorsarray = [collect(mg.filter_vertices(g,(graph, vertex) -> begin
+        colorsarray::Array{Array{Int64,1},1} = [collect(mg.filter_vertices(g,(graph, vertex) -> begin
                                 get(mg.props(graph, vertex), :color, "") == c
                             end
                        )) for c in colors(g)]
 
         # Nauty numbers its nodes from 0
-        labels = Cint.(vcat(colorsarray.-1...))
+        labels::Array{Cint,1} = Cint.(vcat(colorsarray.-1...))
 
         # Give the last node of each colour a "label" of 0, otherwise 1, as Nauty requires
-        partition = vcat([begin z[end]=0; z end for z in ones.(Cint,size.(colorsarray))]...)
+        partition::Array{Cint,1} = vcat([begin z[end]=0; z end for z in ones.(Cint,size.(colorsarray))]...)
         return (labels,partition)
     end
 
     function nauty(g)
-        a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH)
-        a.getcanon = 1
-        a.digraph = 1
-        a.defaultptn = 0
+        #= a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH) =#
+        #= a.getcanon = 1 =#
+        #= a.digraph = 1 =#
+        #= a.defaultptn = 0 =#
         labels, partition = nautylabelspartition(g)
-        nautyrtn = Nauty.densenauty(
-                Nauty.lg_to_nauty(g.graph),
-                Nauty.optionblk(a),
-                labels,
-                partition
-        )
+        nautyrtn = Nauty.baked_canonical_form_color(g,labels,partition)
+        #Nauty.densenauty(
+        #        Nauty.lg_to_nauty(g.graph),
+        #        Nauty.optionblk(a),
+        #        labels,
+        #        partition
+        #)
 
         return nautyrtn
     end
