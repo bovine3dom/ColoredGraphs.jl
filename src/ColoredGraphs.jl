@@ -34,7 +34,7 @@ module ColoredGraphs
 		end
 	end
 
-    function colors(g)
+    function colors(g)::Array{String,1}
         get.(collect(Set(mg.props.(g,1:lg.nv(g)))), :color,"")
     end
 
@@ -44,6 +44,10 @@ module ColoredGraphs
                                 get(mg.props(graph, vertex), :color, "") == c
                             end
                        )) for c in colors(g)]
+
+        # Most time is spent in collect
+        # potentially quicker option: make array same size as number of nodes,
+        # go through each colour and fill in the numbers on by one.
 
         # Nauty numbers its nodes from 0
         labels::Array{Cint,1} = Cint.(vcat(colorsarray.-1...))
