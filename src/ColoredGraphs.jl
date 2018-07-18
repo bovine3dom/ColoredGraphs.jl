@@ -74,6 +74,22 @@ module ColoredGraphs
         return nautyrtn
     end
 
+    function nauty_old(g)
+        a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH)
+        a.getcanon = 1
+        a.digraph = 1
+        a.defaultptn = 0
+        labels, partition = nautylabelspartition(g)
+        nautyrtn = Nauty.densenauty(
+                Nauty.lg_to_nauty(g.graph),
+                Nauty.optionblk(a),
+                labels,
+                partition
+        )
+
+        return nautyrtn
+    end
+
     function plot(g)
         nodefillc = [get(mg.props(g,v),:color,"black") for v in 1:lg.nv(g)]
         gp.gplot(g.graph,nodefillc=nodefillc)
