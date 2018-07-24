@@ -38,31 +38,36 @@ module ColoredGraphs
         get.(collect(Set(mg.props.(g,1:lg.nv(g)))), :color,"")
     end
 
-    function nautylabelspartition(g)
+    function nautylabelspartition(g;model_t=false,ego=0)::Tuple{Array{Int32,1},Array{Int32,1}}
         # Get an array of arrays of nodes which are all the same colour
-        colorsarray::Array{Array{Int64,1},1} = [collect(mg.filter_vertices(g,(graph, vertex) -> begin
-                                get(mg.props(graph, vertex), :color, "") == c
+        colorsarray::Array{Array{Int64,1},1} = !model_t? [collect(mg.filter_vertices(g,(graph, vertex) -> begin
+                                get(mg.props(graph, vertex), :color, "")::String == c
+                                # Perhaps there's a cheaper way of finding vertices that have no property?
                             end
-                       )) for c in colors(g)]
+                       )) for c in colors(g)]:
+            ego==1 ? [[1],collect(2:lg.nv(g))]:
+            ego==0 ? [collect(1:lg.nv(g))]: # Shorthand for "it ain't there"
+            ego==lg.nv(g) ? [collect(1:ego-1),[ego]]: # Shorthand for "it ain't there"
+            [[ego],[1:ego-1..., ego+1:lg.nv(g)...]]
 
         # Most time is spent in collect
         # potentially quicker option: make array same size as number of nodes,
         # go through each colour and fill in the numbers on by one.
 
         # Nauty numbers its nodes from 0
-        labels::Array{Cint,1} = Cint.(vcat(colorsarray.-1...))
+        labels::Array{Cint,1} = vcat(colorsarray.-1...)
 
         # Give the last node of each colour a "label" of 0, otherwise 1, as Nauty requires
         partition::Array{Cint,1} = vcat([begin z[end]=0; z end for z in ones.(Cint,size.(colorsarray))]...)
         return (labels,partition)
     end
 
-    function nauty(g)
+    function nauty(g; egonet=false, ego=0 )
         #= a = Nauty.optionblk_mutable(Nauty.DEFAULTOPTIONS_GRAPH) =#
         #= a.getcanon = 1 =#
         #= a.digraph = 1 =#
         #= a.defaultptn = 0 =#
-        labels, partition = nautylabelspartition(g)
+        labels, partition = nautylabelspartition(g;model_t=egonet,ego=ego)
         nautyrtn = Nauty.baked_canonical_form_color(g,labels,partition)
         #Nauty.densenauty(
         #        Nauty.lg_to_nauty(g.graph),
