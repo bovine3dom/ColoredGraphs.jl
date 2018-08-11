@@ -8,8 +8,8 @@ module ColoredGraphs
 	const mg = MetaGraphs
 	import LightGraphs  
 	const lg = LightGraphs
-    import GraphPlot
-    const gp = GraphPlot
+    #= import GraphPlot =#
+    #= const gp = GraphPlot =#
     import Nauty
     import Colors
     const cl = Colors
@@ -81,7 +81,7 @@ module ColoredGraphs
 
     function plot(g)
         nodefillc = [get(mg.props(g,v),:color,"black") for v in 1:lg.nv(g)]
-        gp.gplot(g.graph,nodefillc=nodefillc)
+        #= gp.gplot(g.graph,nodefillc=nodefillc) =#
     end
 
     function plotnauty(nautyrtn)
@@ -93,7 +93,7 @@ module ColoredGraphs
             push!(colarr,okcol[colind])
             colind = i == 0 ? colind + 1 : colind
         end
-        gp.gplot(lg.Graph(Nauty.label_to_adj(nautyrtn.canong)),nodefillc=colarr)
+        #= gp.gplot(lg.Graph(Nauty.label_to_adj(nautyrtn.canong)),nodefillc=colarr) =#
     end
 
 
